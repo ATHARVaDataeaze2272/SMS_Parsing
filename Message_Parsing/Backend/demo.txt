@@ -1,0 +1,29 @@
+financial_sms_analyzer/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py                    # FastAPI app initialization and entry point
+│   ├── config.py                  # Environment variables and configuration
+│   ├── database.py                # MongoDB connection and database utilities
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── pydantic_models.py     # Pydantic models for request/response validation
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── llm_service.py         # LLM-related functions (e.g., analyze_with_llm)
+│   │   ├── message_processor.py   # Core message processing logic
+│   │   ├── data_extraction.py     # Data extraction and classification utilities
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── api_routes.py          # FastAPI route definitions
+│   │   ├── error_handlers.py      # Custom error handlers
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── date_utils.py          # Date parsing utilities
+│   │   ├── string_utils.py        # String cleaning and sanitization utilities
+│   │   ├── logging_config.py      # Logging configuration
+│
+├── .env                           # Environment variables (not included in repo)
+├── requirements.txt               # Python dependencies
+├── Dockerfile                     # Docker configuration for deployment
+├── README.md                      # Project documentation

@@ -1,0 +1,11 @@
+src/
+├── components/
+│   ├── Header.jsx
+│   ├── FileUploader.jsx
+│   ├── SummaryStats.jsx
+│   ├── MessageTypeAnalytics.jsx
+│   ├── RecentMessages.jsx
+│   ├── CustomerTransactions.jsx
+├── FinancialDashboard.jsx
+├── MessageAnalyzer.css
+├── App.jsx 
