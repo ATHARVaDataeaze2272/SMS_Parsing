@@ -8,8 +8,8 @@ import CustomerTransactions from './components/CustomerTransactions';
 import './MessageAnalyzer.css';
 
 const FinancialDashboard = () => {
-  // const API_BASE_URL = 'http://localhost:8000';
-  const API_BASE_URL ='https://sms-parsing.onrender.com';
+  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL1 ='https://sms-parsing.onrender.com';
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [processing, setProcessing] = useState(false);
