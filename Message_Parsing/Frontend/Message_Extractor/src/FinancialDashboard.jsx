@@ -169,16 +169,7 @@ const FinancialDashboard = () => {
     }
   };
 
-  // const fetchProcessingStatus = async () => {
-  //   try {
-  //     const response = await fetch(`${API_BASE_URL}/processing-status`);
-  //     if (!response.ok) throw new Error('Failed to fetch processing status');
-  //     const status = await response.json();
-  //     setProcessingStatus(status);
-  //   } catch (error) {
-  //     console.error('Error fetching processing status:', error);
-  //   }
-  // };
+ 
 
 
   const fetchProcessingStatus = async () => {
@@ -246,40 +237,7 @@ const FinancialDashboard = () => {
     setSelectedFile(file);
   };
 
-  // const handleFileUpload = async () => {
-  //   if (!selectedFile) {
-  //     alert('Please select a JSON file first');
-  //     return;
-  //   }
-
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append('file', selectedFile);
-
-  //     const response = await fetch(`${API_BASE_URL}/upload-json`, {
-  //       method: 'POST',
-  //       body: formData,
-  //     });
-
-  //     if (!response.ok) throw new Error('Upload failed');
-  //     const result = await response.json();
-  //     setUploadResponse({
-  //       status: result.status,
-  //       message: result.message
-  //     });
-
-  //     if (result.status === 'accepted') {
-  //       setProcessing(true);
-  //       fetchProcessingStatus();
-  //     }
-  //   } catch (error) {
-  //     console.error('Error uploading JSON file:', error);
-  //     setUploadResponse({
-  //       status: 'error',
-  //       message: `Error uploading JSON file: ${error.message}`
-  //     });
-  //   }
-  // };
+ 
 
   const handleFileUpload = async () => {
     if (!selectedFile) {
