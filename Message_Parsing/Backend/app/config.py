@@ -4,7 +4,7 @@ from app.utils.logging_config import logger
 
 # Load environment variables
 load_dotenv()
-logger.debug(f"Loaded MONGODB_URL: {os.getenv('MONGODB_URL')}")
+# logger.debug(f"Loaded MONGODB_URL: {os.getenv('MONGODB_URL')}")
 
 # Environment variables
 MONGODB_URL = os.getenv("MONGODB_URL")
