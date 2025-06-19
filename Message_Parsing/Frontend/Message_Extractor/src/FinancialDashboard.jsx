@@ -9,7 +9,7 @@ import './MessageAnalyzer.css';
 
 const FinancialDashboard = () => {
   const API_BASE_URL = 'http://localhost:8000';
-  const API_BASE_URL1 ='https://sms-parsing.onrender.com';
+  // const API_BASE_URL ='https://sms-parsing.onrender.com';
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -212,7 +212,7 @@ const FinancialDashboard = () => {
     setMessagesLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/messages_demo?message_type=${encodeURIComponent(selectedType)}&limit=10`
+        `${API_BASE_URL}/messages_demo?message_type=${encodeURIComponent(selectedType)}`
       );
       if (!response.ok) throw new Error('Failed to fetch messages by type');
       const messages = await response.json();

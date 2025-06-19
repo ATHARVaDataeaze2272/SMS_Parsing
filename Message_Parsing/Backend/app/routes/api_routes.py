@@ -1542,9 +1542,9 @@ async def upload_json(
             end_time=datetime.utcnow().isoformat()
         )
         raise HTTPException(status_code=500, detail=str(e))
-    
 
-    
+
+
 async def process_json_file(file_path: str, original_filename: str):
     """Background task to process JSON file"""
     try:
@@ -1553,6 +1553,7 @@ async def process_json_file(file_path: str, original_filename: str):
             processed=0,
             succeeded=0,
             failed=0,
+            duplicates=0,  # Add duplicate counter
             current_file=original_filename,
             start_time=datetime.utcnow().isoformat()
         )
@@ -1613,7 +1614,15 @@ async def process_json_file(file_path: str, original_filename: str):
                         from_field = None
                         logger.debug(f"Record {i+1}: No valid 'from' field found")
                     
-                    # Extract customer ID
+                    # Extract SMS ID
+                    sms_id = record.get('smsId')
+                    if sms_id and isinstance(sms_id, str) and sms_id.strip():
+                        logger.debug(f"Record {i+1}: Identified smsId: {sms_id}")
+                    else:
+                        sms_id = None
+                        logger.debug(f"Record {i+1}: No valid smsId found")
+                    
+                    # Extract customer ID - FIXED: Don't use random assignment if cid exists
                     customer_id = None
                     for key in ['cid', 'customer_id', 'customerid']:
                         if key in record and isinstance(record[key], str) and record[key].strip():
@@ -1621,26 +1630,32 @@ async def process_json_file(file_path: str, original_filename: str):
                             logger.debug(f"Record {i+1}: Identified customer ID in '{key}' field: {customer_id}")
                             break
                     
-                    # Prepare customer info (to be validated in process_single_message)
+                    # Prepare customer info - ONLY use hardcoded users if no customer_id found
                     customer_info = None
                     if customer_id:
                         customer_info = {'customer_id': customer_id}
+                        logger.debug(f"Record {i+1}: Using customer ID from JSON: {customer_id}")
                     else:
                         customer_info = random.choice(HARDCODED_USERS)
-                        logger.debug(f"Record {i+1}: Assigned random user: {customer_info['customer_id']}")
+                        logger.debug(f"Record {i+1}: No customer ID found, assigned random user: {customer_info['customer_id']}")
                     
-                    # Process the message and handle customer lookup/insertion and raw message storage
+                    # Process the message
                     result = await process_single_message(
                         date=date_str,
                         message=message,
                         customer_info=customer_info,
-                        from_field=from_field  # Pass 'from' field to process_single_message
+                        from_field=from_field,
+                        sms_id=sms_id
                     )
                     
-                    # Update success count
+                    # Update counters based on result
                     current_status = get_processing_status_copy()
-                    update_processing_status(succeeded=current_status["succeeded"] + 1)
-                    logger.info(f"Successfully processed record {i+1}/{len(data)}")
+                    if result.get("status") == "duplicate":
+                        update_processing_status(duplicates=current_status.get("duplicates", 0) + 1)
+                        logger.info(f"Duplicate SMS skipped for record {i+1}/{len(data)}")
+                    else:
+                        update_processing_status(succeeded=current_status["succeeded"] + 1)
+                        logger.info(f"Successfully processed record {i+1}/{len(data)}")
                     
                 except Exception as e:
                     logger.error(f"Error processing record {i+1}: {str(e)}")
@@ -1661,7 +1676,7 @@ async def process_json_file(file_path: str, original_filename: str):
                 status="completed",
                 end_time=datetime.utcnow().isoformat()
             )
-            logger.info(f"JSON processing completed. Success: {final_status['succeeded']}, Failed: {final_status['failed']}")
+            logger.info(f"JSON processing completed. Success: {final_status['succeeded']}, Failed: {final_status['failed']}, Duplicates: {final_status.get('duplicates', 0)}")
             
     except json.JSONDecodeError as e:
         error_msg = f"Invalid JSON file: {e}"
@@ -1686,6 +1701,150 @@ async def process_json_file(file_path: str, original_filename: str):
                 logger.info(f"Temporary file {file_path} removed")
         except Exception as e:
             logger.warning(f"Could not remove temporary file {file_path}: {str(e)}")
+            
+
+    
+# async def process_json_file(file_path: str, original_filename: str):
+#     """Background task to process JSON file"""
+#     try:
+#         update_processing_status(
+#             status="processing",
+#             processed=0,
+#             succeeded=0,
+#             failed=0,
+#             current_file=original_filename,
+#             start_time=datetime.utcnow().isoformat()
+#         )
+        
+#         logger.info(f"Starting JSON processing: {file_path}")
+        
+#         with open(file_path, 'r', encoding='utf-8') as file:
+#             data = json.load(file)
+            
+#             if not isinstance(data, list):
+#                 error_msg = "JSON file must contain an array of objects"
+#                 logger.error(error_msg)
+#                 update_processing_status(
+#                     status="error",
+#                     error_message=error_msg,
+#                     end_time=datetime.utcnow().isoformat()
+#                 )
+#                 return
+            
+#             update_processing_status(total=len(data))
+#             logger.info(f"Found {len(data)} records to process")
+            
+#             for i, record in enumerate(data):
+#                 try:
+#                     logger.debug(f"Processing record {i+1}: {record}")
+                    
+#                     if not isinstance(record, dict):
+#                         logger.warning(f"Record {i+1}: Not a valid object, skipping")
+#                         update_processing_status(failed=get_processing_status_copy()["failed"] + 1)
+#                         continue
+                    
+#                     # Flexible message field extraction
+#                     message = None
+#                     for key in ['body', 'message', 'text', 'content']:
+#                         if key in record and isinstance(record[key], str) and record[key].strip():
+#                             message = record[key].strip()
+#                             logger.debug(f"Record {i+1}: Identified message in '{key}' field")
+#                             break
+                    
+#                     if not message:
+#                         logger.warning(f"Record {i+1}: No valid message field found, skipping")
+#                         update_processing_status(failed=get_processing_status_copy()["failed"] + 1)
+#                         continue
+                    
+#                     # Flexible date field extraction
+#                     date_str = None
+#                     for key in ['time', 'date', 'timestamp']:
+#                         if key in record and isinstance(record[key], str) and record[key].strip():
+#                             date_str = record[key].strip()
+#                             logger.debug(f"Record {i+1}: Identified date in '{key}' field: {date_str}")
+#                             break
+                    
+#                     # Extract 'from' field
+#                     from_field = record.get('from')
+#                     if from_field and isinstance(from_field, str) and from_field.strip():
+#                         logger.debug(f"Record {i+1}: Identified 'from' field: {from_field}")
+#                     else:
+#                         from_field = None
+#                         logger.debug(f"Record {i+1}: No valid 'from' field found")
+                    
+#                     # Extract customer ID
+#                     customer_id = None
+#                     for key in ['cid', 'customer_id', 'customerid']:
+#                         if key in record and isinstance(record[key], str) and record[key].strip():
+#                             customer_id = record[key].strip()
+#                             logger.debug(f"Record {i+1}: Identified customer ID in '{key}' field: {customer_id}")
+#                             break
+                    
+#                     # Prepare customer info (to be validated in process_single_message)
+#                     customer_info = None
+#                     if customer_id:
+#                         customer_info = {'customer_id': customer_id}
+#                     else:
+#                         customer_info = random.choice(HARDCODED_USERS)
+#                         logger.debug(f"Record {i+1}: Assigned random user: {customer_info['customer_id']}")
+                    
+#                     # Process the message and handle customer lookup/insertion and raw message storage
+#                     result = await process_single_message(
+#                         date=date_str,
+#                         message=message,
+#                         customer_info=customer_info,
+#                         from_field=from_field  # Pass 'from' field to process_single_message
+#                     )
+                    
+#                     # Update success count
+#                     current_status = get_processing_status_copy()
+#                     update_processing_status(succeeded=current_status["succeeded"] + 1)
+#                     logger.info(f"Successfully processed record {i+1}/{len(data)}")
+                    
+#                 except Exception as e:
+#                     logger.error(f"Error processing record {i+1}: {str(e)}")
+#                     current_status = get_processing_status_copy()
+#                     update_processing_status(failed=current_status["failed"] + 1)
+                
+#                 finally:
+#                     # Always update processed count
+#                     current_status = get_processing_status_copy()
+#                     update_processing_status(processed=current_status["processed"] + 1)
+                
+#                 # Small delay to prevent overwhelming the system
+#                 await asyncio.sleep(0.01)
+            
+#             # Mark as completed
+#             final_status = get_processing_status_copy()
+#             update_processing_status(
+#                 status="completed",
+#                 end_time=datetime.utcnow().isoformat()
+#             )
+#             logger.info(f"JSON processing completed. Success: {final_status['succeeded']}, Failed: {final_status['failed']}")
+            
+#     except json.JSONDecodeError as e:
+#         error_msg = f"Invalid JSON file: {e}"
+#         logger.error(error_msg)
+#         update_processing_status(
+#             status="error",
+#             error_message=error_msg,
+#             end_time=datetime.utcnow().isoformat()
+#         )
+#     except Exception as e:
+#         error_msg = f"JSON processing error: {e}"
+#         logger.error(error_msg)
+#         update_processing_status(
+#             status="error",
+#             error_message=error_msg,
+#             end_time=datetime.utcnow().isoformat()
+#         )
+#     finally:
+#         try:
+#             if os.path.exists(file_path):
+#                 os.remove(file_path)
+#                 logger.info(f"Temporary file {file_path} removed")
+#         except Exception as e:
+#             logger.warning(f"Could not remove temporary file {file_path}: {str(e)}")
 
 
 # async def process_json_file(file_path: str, original_filename: str):
@@ -2174,8 +2333,7 @@ async def get_messages_by_type(message_type: str, limit: int = 10):
                         "important_points": "$important_points",
                         "_id": 0
                     }
-                },
-                {"$limit": limit}
+                }
             ]
             messages = list(raw_messages.aggregate(pipeline))
             return messages
@@ -2203,8 +2361,7 @@ async def get_messages_by_type(message_type: str, limit: int = 10):
                     },
                     "_id": 0
                 }
-            },
-            {"$limit": limit}
+            }
         ]
         messages = list(transactions.aggregate(pipeline))
         for msg in messages:
@@ -2220,7 +2377,7 @@ async def get_messages_by_type(message_type: str, limit: int = 10):
             db.client.close()
 
 @router.get("/messages_demo")
-async def get_messages_by_type_demo(message_type: str, limit: int = 10):
+async def get_messages_by_type_demo(message_type: str):
     db = None
     try:
         db = get_db()
@@ -2233,10 +2390,10 @@ async def get_messages_by_type_demo(message_type: str, limit: int = 10):
                     "$project": {
                         "message": "$message_text",
                         "important_points": "$important_points",
+                        "from": "$from",  # Include 'from' field
                         "_id": 0
                     }
-                },
-                {"$limit": limit}
+                }
             ]
             messages = list(raw_messages.aggregate(pipeline))
             return messages
@@ -2291,14 +2448,13 @@ async def get_messages_by_type_demo(message_type: str, limit: int = 10):
                 "$project": {
                     "_id": 0,
                     "message": "$raw_message.message_text",
-                    "important_points": 1
+                    "important_points": 1,
+                    "from": "$raw_message.from"  # Include 'from' field
                 }
-            },
-            {"$limit": limit}
+            }
         ]
         messages = list(transactions.aggregate(pipeline))
         
-        # Handle date formatting for all messages
         for msg in messages:
             extracted_data = msg.get('extracted_data', {})
             if extracted_data.get('transaction_date'):
