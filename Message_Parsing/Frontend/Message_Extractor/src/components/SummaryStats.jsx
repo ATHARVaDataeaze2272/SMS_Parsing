@@ -9,7 +9,9 @@ const SummaryStats = ({ summaryData, statsExpanded, setStatsExpanded, formatCurr
       credit_card: { transaction_count: 0, total_spent: 0, highest_outstanding: 0 },
       investments: { transaction_count: 0, total_invested: 0, unique_folios: 0 },
       insurance: { transaction_count: 0, total_amount: 0, unique_policies: 0 },
-      general: { transaction_count: 0, total_amount: 0 },
+      credit: { transaction_count: 0, total_amount: 0 },
+      debit: { transaction_count: 0, total_amount: 0 },
+      other: { transaction_count: 0, total_amount: 0 },
     };
 
     summaryData.message_type_stats.forEach(stat => {
@@ -40,21 +42,21 @@ const SummaryStats = ({ summaryData, statsExpanded, setStatsExpanded, formatCurr
           stats.insurance.total_amount = amount;
           stats.insurance.unique_policies = stat.unique_policies || 0;
           break;
-        case 'OTHER_FINANCIAL':
-          stats.general.transaction_count = stat.count;
-          stats.general.total_amount += amount;
-          break;
         case 'CREDIT_TRANSACTION':
-          stats.general.transaction_count += stat.count;
-          stats.general.total_amount += amount;
+          stats.credit.transaction_count = stat.count;
+          stats.credit.total_amount = amount;
           break;
         case 'DEBIT_TRANSACTION':
-          stats.general.transaction_count += stat.count;
-          stats.general.total_amount += amount;
+          stats.debit.transaction_count = stat.count;
+          stats.debit.total_amount = amount;
+          break;
+        case 'OTHER_FINANCIAL':
+          stats.other.transaction_count = stat.count;
+          stats.other.total_amount = amount;
           break;
         default:
-          stats.general.transaction_count += stat.count;
-          stats.general.total_amount += amount;
+          stats.other.transaction_count += stat.count;
+          stats.other.total_amount += amount;
           break;
       }
     });
@@ -106,9 +108,19 @@ const SummaryStats = ({ summaryData, statsExpanded, setStatsExpanded, formatCurr
             <p className="text-sm text-gray-600 mt-3">Unique Policies: {stats.insurance.unique_policies}</p>
           </div>
           <div className="bg-white p-4 rounded shadow">
+            <h4 className="text-lg font-medium text-indigo-700">Credit Transactions</h4>
+            <p className="text-sm text-gray-600">Total Transactions: {stats.credit.transaction_count}</p>
+            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.credit.total_amount)}</p>
+          </div>
+          <div className="bg-white p-4 rounded shadow">
+            <h4 className="text-lg font-medium text-yellow-700">Debit Transactions</h4>
+            <p className="text-sm text-gray-600">Total Transactions: {stats.debit.transaction_count}</p>
+            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.debit.total_amount)}</p>
+          </div>
+          <div className="bg-white p-4 rounded shadow">
             <h4 className="text-lg font-medium text-gray-700">Other Transactions</h4>
-            <p className="text-sm text-gray-600">Total Transactions: {stats.general.transaction_count}</p>
-            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.general.total_amount)}</p>
+            <p className="text-sm text-gray-600">Total Transactions: {stats.other.transaction_count}</p>
+            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.other.total_amount)}</p>
           </div>
           <div className="bg-white p-4 rounded shadow">
             <h4 className="text-lg font-medium text-orange-700">Total Customers</h4>

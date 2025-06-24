@@ -69,49 +69,94 @@ async def analyze_with_llm(message: str) -> Optional[Dict[str, Any]]:
         return None
     
     try:
+#         prompt = f"""
+# You are a financial SMS analyzer. Analyze this SMS message and return ONLY a valid JSON object with no additional text, markdown, or formatting.
+
+# SMS Message: "{message}"
+
+# Classify into one of these categories:
+# - SALARY_CREDIT: Salary deposits
+# - EMI_PAYMENT: Loan EMI payments  
+# - CREDIT_CARD_TRANSACTION: Credit card purchases
+# - SIP_INVESTMENT: Mutual fund SIP investments
+# - CREDIT_TRANSACTION: Money credited/deposited
+# - DEBIT_TRANSACTION: Money debited/withdrawn
+# - INSURANCE_PAYMENT: Insurance premium payments
+# - PROMOTIONAL: Advertisements, offers, non-transactional messages
+# - OTHER_FINANCIAL: Other financial messages
+
+# Extract relevant data fields:
+# - amount: Transaction amount (number)
+# - account_number: Account/card number (string)
+# - transaction_date: Date in YYYY-MM-DD format (string)
+# - available_balance: Available balance (number)
+# - bank_name: Bank name (string)
+
+# Category-specific fields:
+# - For SALARY_CREDIT: employer (string)
+# - For EMI_PAYMENT: loan_reference (string), loan_type (string)  
+# - For CREDIT_CARD_TRANSACTION: merchant (string), authorization_code (string), total_outstanding (number)
+# - For SIP_INVESTMENT: fund_name (string), folio_number (string), nav_value (number)
+# - For INSURANCE_PAYMENT: policy_number (string), insurance_company (string), insurance_type (string)
+# - For PROMOTIONAL: message (string - store the original message)
+
+# Return this exact JSON structure:
+# {{
+#   "message_type": "CATEGORY_NAME",
+#   "extracted_data": {{
+#     "field1": "value1",
+#     "field2": value2
+#   }},
+#   "important_points": ["point1", "point2", "point3"]
+# }}
+
+# Return only the JSON object, no other text.
+# """
+
         prompt = f"""
-You are a financial SMS analyzer. Analyze this SMS message and return ONLY a valid JSON object with no additional text, markdown, or formatting.
+You are a financial SMS analyzer.
 
-SMS Message: "{message}"
+Analyze this SMS: "{message}"
 
-Classify into one of these categories:
-- SALARY_CREDIT: Salary deposits
-- EMI_PAYMENT: Loan EMI payments  
-- CREDIT_CARD_TRANSACTION: Credit card purchases
-- SIP_INVESTMENT: Mutual fund SIP investments
-- CREDIT_TRANSACTION: Money credited/deposited
-- DEBIT_TRANSACTION: Money debited/withdrawn
-- INSURANCE_PAYMENT: Insurance premium payments
-- PROMOTIONAL: Advertisements, offers, non-transactional messages
-- OTHER_FINANCIAL: Other financial messages
+Return only a valid JSON object, no text or formatting.
 
-Extract relevant data fields:
-- amount: Transaction amount (number)
-- account_number: Account/card number (string)
-- transaction_date: Date in YYYY-MM-DD format (string)
-- available_balance: Available balance (number)
-- bank_name: Bank name (string)
+Classify as one of:
+- SALARY_CREDIT
+- EMI_PAYMENT
+- CREDIT_CARD_TRANSACTION
+- SIP_INVESTMENT
+- CREDIT_TRANSACTION
+- DEBIT_TRANSACTION
+- INSURANCE_PAYMENT
+- PROMOTIONAL
+- OTHER_FINANCIAL
+
+Extract fields:
+- amount (number)
+- account_number (string)
+- transaction_date (YYYY-MM-DD)
+- available_balance (number)
+- bank_name (string)
 
 Category-specific fields:
-- For SALARY_CREDIT: employer (string)
-- For EMI_PAYMENT: loan_reference (string), loan_type (string)  
-- For CREDIT_CARD_TRANSACTION: merchant (string), authorization_code (string), total_outstanding (number)
-- For SIP_INVESTMENT: fund_name (string), folio_number (string), nav_value (number)
-- For INSURANCE_PAYMENT: policy_number (string), insurance_company (string), insurance_type (string)
-- For PROMOTIONAL: message (string - store the original message)
+- SALARY_CREDIT: employer
+- EMI_PAYMENT: loan_reference, loan_type
+- CREDIT_CARD_TRANSACTION: merchant, authorization_code, total_outstanding
+- SIP_INVESTMENT: fund_name, folio_number, nav_value
+- INSURANCE_PAYMENT: policy_number, insurance_company, insurance_type
+- PROMOTIONAL: message (original)
 
-Return this exact JSON structure:
+Return JSON:
 {{
   "message_type": "CATEGORY_NAME",
   "extracted_data": {{
     "field1": "value1",
-    "field2": value2
+    ...
   }},
   "important_points": ["point1", "point2", "point3"]
 }}
-
-Return only the JSON object, no other text.
 """
+
 
         response = model.invoke(prompt)
         response_text = response.content if hasattr(response, 'content') else str(response)

@@ -1,0 +1,73 @@
+[
+  {
+    "body": "Rs. 750.00 debited from your a/c XXXXX9134 via UPI to @ybl on 06-06-2025. UPI Ref: 324290117839.",
+    "cid": "CUST004",
+    "from": "AD-PAYTMB",
+    "smsId": "1011",
+    "time": "2025-06-06 18:12:00+00:00"
+  },
+  {
+    "body": "A Fixed Deposit of Rs. 50,000.00 has been created for 1 year at 7.2% interest under A/C XXXX4590. - Axis Bank",
+    "cid": "CUST005",
+    "from": "AX-AXISBK",
+    "smsId": "1012",
+    "time": "2025-06-06 11:15:00+00:00"
+  },
+  {
+    "body": "NEFT Credit of Rs. 10,000.00 received in your A/C XXXX1254 on 06-06-2025 from ABC CORP LTD. UTR: N25673819.",
+    "cid": "CUST006",
+    "from": "VK-HDFCBK",
+    "smsId": "1013",
+    "time": "2025-06-06 10:00:00+00:00"
+  },
+  {
+    "body": "Refund of Rs. 799.00 from AMAZON has been credited to your a/c XXXX8745 on 07-06-2025. - ICICI Bank",
+    "cid": "CUST004",
+    "from": "IC-ICICIBK",
+    "smsId": "1014",
+    "time": "2025-06-07 13:00:00+00:00"
+  },
+  {
+    "body": "Your order for 5 shares of INFY at Rs. 1,492.00 each has been executed on 07-06-2025. - Zerodha",
+    "cid": "CUST005",
+    "from": "JD-ZERODH",
+    "smsId": "1015",
+    "time": "2025-06-07 09:45:00+00:00"
+  },
+  {
+    "body": "Recharge successful for Rs. 399.00 on Jio number 98765XXXXX. Plan valid till 07-07-2025. - Jio",
+    "cid": "CUST006",
+    "from": "JK-JIOSMS",
+    "smsId": "1016",
+    "time": "2025-06-07 14:20:00+00:00"
+  },
+  {
+    "body": "EMI of Rs. 2,345.00 due on 08-06-2025 for your personal loan A/C XXXX8234. - IDFC FIRST Bank",
+    "cid": "CUST004",
+    "from": "ID-IDFCFB",
+    "smsId": "1017",
+    "time": "2025-06-07 17:00:00+00:00"
+  },
+  {
+    "body": "Rs. 9,999.00 spent on your Credit Card ending 5632 at CROMA on 08-06-2025. Avl Limit: Rs. 45,001.00. - HDFC",
+    "cid": "CUST005",
+    "from": "AD-HDFCCB",
+    "smsId": "1018",
+    "time": "2025-06-08 11:30:00+00:00"
+  },
+  {
+    "body": "Your Health Insurance policy no. H123459 for Rs. 5,00,000.00 sum insured renewed successfully on 08-06-2025. - Niva Bupa",
+    "cid": "CUST006",
+    "from": "BP-NIVABU",
+    "smsId": "1019",
+    "time": "2025-06-08 08:25:00+00:00"
+  },
+  {
+    "body": "Rs. 15,000.00 transferred to a/c XXXX4112 via IMPS on 08-06-2025. UTR: IMPS9823764982 - Kotak",
+    "cid": "CUST004",
+    "from": "VK-KOTAKB",
+    "smsId": "1020",
+    "time": "2025-06-08 12:45:00+00:00"
+  }
+]
+
