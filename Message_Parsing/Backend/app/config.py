@@ -8,7 +8,7 @@ load_dotenv()
 
 # Environment variables
 MONGODB_URL = os.getenv("MONGODB_URL")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("API_KEY")
+GOOGLE_API_KEY = os.getenv("API_KEY")
 
 # Validate environment variables
 if not MONGODB_URL:

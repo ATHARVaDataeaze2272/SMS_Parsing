@@ -6,7 +6,7 @@ import {
 import Chart from 'chart.js/auto';
 
 const FinancialDashboard = () => {
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = '/api';
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [processing, setProcessing] = useState(false);
