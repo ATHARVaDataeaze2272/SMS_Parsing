@@ -20,7 +20,7 @@ const SummaryStats = ({ summaryData, statsExpanded, setStatsExpanded, formatCurr
         case 'SALARY_CREDIT':
           stats.salary.transaction_count = stat.count;
           stats.salary.total_amount = amount;
-          stats.salary.highest_salary = amount / Math.max(stat.count, 1);
+          //stats.salary.highest_salary = amount / Math.max(stat.count, 1);
           break;
         case 'EMI_PAYMENT':
           stats.emi.transaction_count = stat.count;
@@ -81,7 +81,7 @@ const SummaryStats = ({ summaryData, statsExpanded, setStatsExpanded, formatCurr
             <h4 className="text-lg font-medium text-blue-700">Salary Deposits</h4>
             <p className="text-sm text-gray-600">Total Transactions: {stats.salary.transaction_count}</p>
             <p className="text-2xl font-bold mt-2">{formatCurrency(stats.salary.total_amount)}</p>
-            <p className="text-sm text-gray-600 mt-3">Highest Salary: {formatCurrency(stats.salary.highest_salary)}</p>
+            {/* <p className="text-sm text-gray-600 mt-3">Highest Salary: {formatCurrency(stats.salary.highest_salary)}</p> */}
           </div>
           <div className="bg-white p-4 rounded shadow">
             <h4 className="text-lg font-medium text-red-700">EMI Payments</h4>

@@ -7,12 +7,18 @@ from typing import Optional, Dict, Any
 # Initialize LLM
 model = None
 try:
+    
     model = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-thinking-exp-01-21",
-        temperature=0.3,
-        max_tokens=None,
-        google_api_key=GOOGLE_API_KEY
-    )
+    model="gemini-2.0-flash",
+    google_api_key=GOOGLE_API_KEY,
+    temperature=0.3
+)
+    # model = ChatGoogleGenerativeAI(
+    #     model="gemini-2.0-flash-thinking-exp-01-21",
+    #     temperature=0.3,
+    #     max_tokens=None,
+    #     google_api_key=GOOGLE_API_KEY
+    # )
     logger.info("Gemini model initialized successfully")
 except Exception as e:
     logger.error(f"Error initializing Gemini model: {e}")
@@ -69,93 +75,112 @@ async def analyze_with_llm(message: str) -> Optional[Dict[str, Any]]:
         return None
     
     try:
-#         prompt = f"""
-# You are a financial SMS analyzer. Analyze this SMS message and return ONLY a valid JSON object with no additional text, markdown, or formatting.
-
-# SMS Message: "{message}"
-
-# Classify into one of these categories:
-# - SALARY_CREDIT: Salary deposits
-# - EMI_PAYMENT: Loan EMI payments  
-# - CREDIT_CARD_TRANSACTION: Credit card purchases
-# - SIP_INVESTMENT: Mutual fund SIP investments
-# - CREDIT_TRANSACTION: Money credited/deposited
-# - DEBIT_TRANSACTION: Money debited/withdrawn
-# - INSURANCE_PAYMENT: Insurance premium payments
-# - PROMOTIONAL: Advertisements, offers, non-transactional messages
-# - OTHER_FINANCIAL: Other financial messages
-
-# Extract relevant data fields:
-# - amount: Transaction amount (number)
-# - account_number: Account/card number (string)
-# - transaction_date: Date in YYYY-MM-DD format (string)
-# - available_balance: Available balance (number)
-# - bank_name: Bank name (string)
-
-# Category-specific fields:
-# - For SALARY_CREDIT: employer (string)
-# - For EMI_PAYMENT: loan_reference (string), loan_type (string)  
-# - For CREDIT_CARD_TRANSACTION: merchant (string), authorization_code (string), total_outstanding (number)
-# - For SIP_INVESTMENT: fund_name (string), folio_number (string), nav_value (number)
-# - For INSURANCE_PAYMENT: policy_number (string), insurance_company (string), insurance_type (string)
-# - For PROMOTIONAL: message (string - store the original message)
-
-# Return this exact JSON structure:
-# {{
-#   "message_type": "CATEGORY_NAME",
-#   "extracted_data": {{
-#     "field1": "value1",
-#     "field2": value2
-#   }},
-#   "important_points": ["point1", "point2", "point3"]
-# }}
-
-# Return only the JSON object, no other text.
-# """
-
         prompt = f"""
-You are a financial SMS analyzer.
+You are a financial SMS analyzer designed for precise classification and data extraction. Analyze the provided SMS message and return ONLY a valid JSON object with no additional text, markdown, or formatting.
 
-Analyze this SMS: "{message}"
+SMS Message: "{message}"
 
-Return only a valid JSON object, no text or formatting.
+Classify the message into exactly one of these categories based on strict keyword, pattern, and context analysis:
+- SALARY_CREDIT: Salary deposits, identified by keywords like 'salary', 'payroll', or employer names with 'credited' and no generic payment context.
+- EMI_PAYMENT: Loan EMI payments, identified by keywords like 'EMI', 'loan', 'deducted', 'payment', or loan reference numbers.
+- CREDIT_CARD_TRANSACTION: Credit card purchases, identified by keywords like 'credit card', 'spent', 'charged', 'merchant', or authorization codes.
+- SIP_INVESTMENT: Mutual fund SIP investments, identified by keywords like 'SIP', 'mutual fund', 'invested', 'folio', or 'NAV'.
+- CREDIT_TRANSACTION: Money credited/deposited (excluding salary), identified by keywords like 'NEFT', 'RTGS', 'credited', 'deposited', or 'received' without salary or employer context.
+- DEBIT_TRANSACTION: Money debited/withdrawn, identified by keywords like 'debited', 'withdrawn', 'spent', or 'deducted' without EMI or credit card context.
+- INSURANCE_PAYMENT: Insurance premium payments, identified by keywords like 'premium', 'paid', 'deducted' with policy number or insurance company, excluding non-transactional renewal confirmations.
+- PROMOTIONAL: Advertisements, offers, or non-transactional messages, identified by keywords like 'offer', 'apply', 'discount', or promotional phrases without transactional details.
+- OTHER_FINANCIAL: Financial messages not fitting other categories, including non-transactional insurance renewals, balance inquiries, or account updates.
 
-Classify as one of:
-- SALARY_CREDIT
-- EMI_PAYMENT
-- CREDIT_CARD_TRANSACTION
-- SIP_INVESTMENT
-- CREDIT_TRANSACTION
-- DEBIT_TRANSACTION
-- INSURANCE_PAYMENT
-- PROMOTIONAL
-- OTHER_FINANCIAL
+Classification rules:
+1. For INSURANCE_PAYMENT, confirm the message indicates an actual payment (e.g., 'premium paid', 'deducted') rather than a renewal confirmation (e.g., 'renewed successfully'). Non-transactional renewals with 'sum insured' amounts should be classified as OTHER_FINANCIAL.
+2. Differentiate SALARY_CREDIT from CREDIT_TRANSACTION by checking for salary-specific keywords ('salary', 'payroll') or employer context. Generic credits (e.g., 'NEFT Credit' with a company name but no salary context) are CREDIT_TRANSACTION.
+3. Validate transactional intent by checking for payment or transfer indicators (e.g., 'credited', 'debited', 'paid'). Non-transactional messages default to OTHER_FINANCIAL or PROMOTIONAL.
+4. Cross-check numerical patterns (e.g., amounts, account numbers, dates) to confirm transaction type.
+5. If multiple categories seem applicable, select the most specific based on unique keywords (e.g., 'EMI' for EMI_PAYMENT over DEBIT_TRANSACTION).
+6. Default to OTHER_FINANCIAL only if no other category fits after exhaustive checks.
 
-Extract fields:
-- amount (number)
-- account_number (string)
-- transaction_date (YYYY-MM-DD)
-- available_balance (number)
-- bank_name (string)
+Extract these fields only when explicitly present and relevant to an actual transaction:
+- amount: Transaction amount (number, extract only for actual payments or transfers, e.g., 1000.50; exclude 'sum insured' or non-transactional amounts)
+- account_number: Account or card number (string, extract last 4 digits or masked number, e.g., 'XXXX1234')
+- transaction_date: Date in YYYY-MM-DD format (string, convert from DD/MM/YYYY, DD-MM-YYYY, or textual formats like '12 Jan 2025')
+- available_balance: Available balance (number, extract from phrases like 'Avail Bal', 'balance')
+- bank_name: Bank name (string, extract from sender ID or message content, e.g., 'HDFC', 'SBI')
 
 Category-specific fields:
-- SALARY_CREDIT: employer
-- EMI_PAYMENT: loan_reference, loan_type
-- CREDIT_CARD_TRANSACTION: merchant, authorization_code, total_outstanding
-- SIP_INVESTMENT: fund_name, folio_number, nav_value
-- INSURANCE_PAYMENT: policy_number, insurance_company, insurance_type
-- PROMOTIONAL: message (original)
+- For SALARY_CREDIT: employer (string, extract company/organization name)
+- For EMI_PAYMENT: loan_reference (string, extract loan ID or reference number), loan_type (string, e.g., 'home', 'car', 'personal')
+- For CREDIT_CARD_TRANSACTION: merchant (string, extract merchant name), authorization_code (string, extract code if present), total_outstanding (number, extract outstanding balance)
+- For SIP_INVESTMENT: fund_name (string, extract mutual fund name), folio_number (string, extract folio number), nav_value (number, extract NAV value)
+- For INSURANCE_PAYMENT: policy_number (string, extract policy number), insurance_company (string, extract company name), insurance_type (string, e.g., 'life', 'health')
+- For PROMOTIONAL: message (string, store the original SMS message)
+- For OTHER_FINANCIAL: policy_number (string, for insurance renewals), insurance_company (string), insurance_type (string), sum_insured (number, for non-transactional insurance amounts)
 
-Return JSON:
+Handle edge cases:
+- If a field is not mentioned, set it to null unless inferable from context (e.g., bank name from sender ID like 'HDFCBNK').
+- For ambiguous dates (e.g., '01/02/2025'), assume DD/MM/YYYY unless specified otherwise.
+- Exclude 'sum insured' amounts from 'amount' field; store in 'sum_insured' for OTHER_FINANCIAL insurance renewals.
+- For company names in credits, assume CREDIT_TRANSACTION unless 'salary' or 'payroll' is explicitly mentioned.
+
+Return this exact JSON structure:
 {{
   "message_type": "CATEGORY_NAME",
   "extracted_data": {{
     "field1": "value1",
-    ...
+    "field2": value2
   }},
   "important_points": ["point1", "point2", "point3"]
 }}
-"""
+
+The 'important_points' array should include:
+1. Primary reason for the chosen category (e.g., "Contains 'EMI' and loan reference number").
+2. Key extracted fields summary (e.g., "Amount: 5000, Bank: HDFC").
+3. Any notable context or ambiguity resolved (e.g., "Sum insured amount excluded from transaction amount").
+
+Return only the JSON object, no other text.
+# """
+#         prompt = f"""
+# You are a financial SMS analyzer.
+
+# Analyze this SMS: "{message}"
+
+# Return only a valid JSON object, no text or formatting.
+
+# Classify as one of:
+# - SALARY_CREDIT
+# - EMI_PAYMENT
+# - CREDIT_CARD_TRANSACTION
+# - SIP_INVESTMENT
+# - CREDIT_TRANSACTION
+# - DEBIT_TRANSACTION
+# - INSURANCE_PAYMENT
+# - PROMOTIONAL
+# - OTHER_FINANCIAL
+
+# Extract fields:
+# - amount (number)
+# - account_number (string)
+# - transaction_date (YYYY-MM-DD)
+# - available_balance (number)
+# - bank_name (string)
+
+# Category-specific fields:
+# - SALARY_CREDIT: employer
+# - EMI_PAYMENT: loan_reference, loan_type
+# - CREDIT_CARD_TRANSACTION: merchant, authorization_code, total_outstanding
+# - SIP_INVESTMENT: fund_name, folio_number, nav_value
+# - INSURANCE_PAYMENT: policy_number, insurance_company, insurance_type
+# - PROMOTIONAL: message (original)
+
+# Return JSON:
+# {{
+#   "message_type": "CATEGORY_NAME",
+#   "extracted_data": {{
+#     "field1": "value1",
+#     ...
+#   }},
+#   "important_points": ["point1", "point2", "point3"]
+# }}
+# """
 
 
         response = model.invoke(prompt)
